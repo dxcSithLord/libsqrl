@@ -12,6 +12,7 @@ For more details, see the LICENSE file included with this package.
 
 #define SQRL_SERVER_MAC_LENGTH 16
 #define SQRL_SERVER_TOKEN_NUT "_LIBSQRL_NUT_"
+#define SQRL_SERVER_BLOB_SIZE 512  /* Maximum size for user blob in callbacks */
 
 #define SQRL_SERVER_USER_FLAG_DISABLED   0x01
 

@@ -7,6 +7,7 @@ For more details, see the LICENSE file included with this package.
 */
 
 #include "sqrl_internal.h"
+#include "sqrl_secure.h"
 
 #define COMMAND_COUNT 5
 
@@ -295,11 +296,14 @@ void sqrl_server_parse_query(
     }
 }
 
-bool sqrl_server_get_user( 
+bool sqrl_server_get_user(
     Sqrl_Server_Context *context,
     char *idk )
 {
-    char *blob = malloc( 512 );
+    /* Allocate blob buffer with defined size constant */
+    char *blob = malloc( SQRL_SERVER_BLOB_SIZE );
+    if( !blob ) return false;
+
     sqrl_scb_user *onUserOp = (sqrl_scb_user*)context->server->onUserOp;
     if( (onUserOp)( 
         SQRL_SCB_USER_FIND,
@@ -333,8 +337,12 @@ void sqrl_server_add_user_suk( Sqrl_Server_Context *context )
     UT_string *tmp;
     utstring_new( tmp );
     sqrl_b64u_encode( tmp, context->user->suk, SQRL_KEY_SIZE );
-    context->server_strings[SERVER_KV_SUK] = malloc( 1 + utstring_len( tmp ));
-    strcpy( context->server_strings[SERVER_KV_SUK], utstring_body( tmp ));
+    size_t suk_len = utstring_len( tmp ) + 1;
+    context->server_strings[SERVER_KV_SUK] = malloc( suk_len );
+    if( context->server_strings[SERVER_KV_SUK] ) {
+        /* Security fix: Use secure string copy (CWE-119) */
+        sqrl_secure_strcpy( context->server_strings[SERVER_KV_SUK], utstring_body( tmp ), suk_len );
+    }
     utstring_free( tmp );
 }
 
