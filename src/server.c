@@ -285,8 +285,15 @@ bool sqrl_scb_user_default(
         if( 0 == strcmp( cmpStr, l->idk )) {
             switch( op ) {
             case SQRL_SCB_USER_FIND:
-                /* Security fix: Use secure string copy - blob size should be validated by caller */
-                sqrl_secure_strcpy( blob, l->blob, strlen(l->blob) + 1 );
+                /* Security fix: Use correct destination buffer size (SQRL_SERVER_BLOB_SIZE)
+                 * The caller allocates SQRL_SERVER_BLOB_SIZE bytes (see server_protocol.c:303)
+                 * We must not overflow this buffer even if l->blob is larger.
+                 */
+                if( strlen(l->blob) >= SQRL_SERVER_BLOB_SIZE ) {
+                    /* Blob is too large to fit in caller's buffer - this is an error */
+                    return false;
+                }
+                sqrl_secure_strcpy( blob, l->blob, SQRL_SERVER_BLOB_SIZE );
                 return true;
             case SQRL_SCB_USER_UPDATE:
                 /* Security fix: Reallocate with correct size instead of blindly copying */

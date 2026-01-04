@@ -296,11 +296,14 @@ void sqrl_server_parse_query(
     }
 }
 
-bool sqrl_server_get_user( 
+bool sqrl_server_get_user(
     Sqrl_Server_Context *context,
     char *idk )
 {
-    char *blob = malloc( 512 );
+    /* Allocate blob buffer with defined size constant */
+    char *blob = malloc( SQRL_SERVER_BLOB_SIZE );
+    if( !blob ) return false;
+
     sqrl_scb_user *onUserOp = (sqrl_scb_user*)context->server->onUserOp;
     if( (onUserOp)( 
         SQRL_SCB_USER_FIND,
