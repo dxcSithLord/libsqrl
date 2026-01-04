@@ -10,18 +10,42 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <limits.h>
 #include <sodium.h>
 #include "sqrl_secure.h"
 #include "sqrl_expert.h"
 
 int sqrl_secure_strcpy(char *dest, const char *src, size_t dest_size)
 {
-    if (!dest || !src || dest_size == 0) {
+    /* Validate parameters */
+    if (!dest || !src) {
+        return -1;
+    }
+
+    /* Check for dest_size that would cause issues */
+    if (dest_size == 0 || dest_size == 1) {
+        if (dest_size == 1) {
+            dest[0] = '\0';
+        }
+        return -1;
+    }
+
+    /* Prevent integer overflow: check if dest_size - 1 is safe */
+    if (dest_size > SIZE_MAX) {
         return -1;
     }
 
     size_t src_len = strlen(src);
-    size_t copy_len = (src_len < dest_size - 1) ? src_len : dest_size - 1;
+    size_t max_copy = dest_size - 1;  /* Reserve space for null terminator */
+
+    /* Determine actual copy length */
+    size_t copy_len = (src_len < max_copy) ? src_len : max_copy;
+
+    /* Verify copy_len is reasonable for return value */
+    if (copy_len > INT_MAX) {
+        return -1;
+    }
 
     memcpy(dest, src, copy_len);
     dest[copy_len] = '\0';
@@ -31,18 +55,36 @@ int sqrl_secure_strcpy(char *dest, const char *src, size_t dest_size)
 
 int sqrl_secure_strcat(char *dest, const char *src, size_t dest_size)
 {
+    /* Validate parameters */
     if (!dest || !src || dest_size == 0) {
         return -1;
     }
 
-    size_t dest_len = strlen(dest);
+    /* Prevent overflow in dest_size operations */
+    if (dest_size > SIZE_MAX - 1) {
+        return -1;
+    }
+
+    size_t dest_len = strnlen(dest, dest_size);
+
+    /* Check if dest is already full or not null-terminated within bounds */
     if (dest_len >= dest_size) {
+        return -1;
+    }
+
+    /* Check for potential overflow in remaining calculation */
+    if (dest_size < dest_len + 1) {
         return -1;
     }
 
     size_t remaining = dest_size - dest_len - 1;
     size_t src_len = strlen(src);
     size_t copy_len = (src_len < remaining) ? src_len : remaining;
+
+    /* Check result length fits in int for return value */
+    if (dest_len + copy_len > INT_MAX) {
+        return -1;
+    }
 
     memcpy(dest + dest_len, src, copy_len);
     dest[dest_len + copy_len] = '\0';

@@ -9,6 +9,7 @@ For more details, see the LICENSE file included with this package.
 #include <sodium.h>
 #include <stdio.h>
 #include "sqrl_internal.h"
+#include "sqrl_secure.h"
 
 // TODO: Determine PAGE_SIZE at runtime?
 #define PAGE_SIZE 4096
@@ -479,7 +480,8 @@ void sqrl_storage_unique_id( Sqrl_Storage storage, char *unique_id )
 			UT_string *buf;
 			utstring_new( buf );
 			sqrl_b64u_encode( buf, block.data + 25, SQRL_KEY_SIZE );
-			strcpy( unique_id, utstring_body( buf ));
+			/* Security fix: Use secure string copy (CWE-119) */
+			sqrl_secure_strcpy( unique_id, utstring_body( buf ), SQRL_UNIQUE_ID_LENGTH + 1 );
 			utstring_free( buf );
 			goto DONE;
 		}

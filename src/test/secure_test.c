@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sodium.h>
-#include "../sqrl_secure.h"
+#include "sqrl_secure.h"
 
 static int test_count = 0;
 static int pass_count = 0;

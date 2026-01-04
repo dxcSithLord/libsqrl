@@ -251,12 +251,27 @@ bool sqrl_scb_user_default(
 
     if( op == SQRL_SCB_USER_CREATE ) {
         l = calloc( 1, sizeof( struct sqrl_default_user_list ));
+        if( !l ) return false;
+
         size_t idk_len = strlen( idk ) + 1;
         size_t blob_len = strlen( blob ) + 1;
+
         l->idk = malloc( idk_len );
+        if( !l->idk ) {
+            free( l );
+            return false;
+        }
+
         /* Security fix: Use secure string copy (CWE-119) */
         sqrl_secure_strcpy( l->idk, idk, idk_len );
+
         l->blob = malloc( blob_len );
+        if( !l->blob ) {
+            free( l->idk );
+            free( l );
+            return false;
+        }
+
         sqrl_secure_strcpy( l->blob, blob, blob_len );
         l->next = SDUL;
         SDUL = l;
@@ -278,6 +293,8 @@ bool sqrl_scb_user_default(
                 {
                     size_t new_blob_len = strlen( blob ) + 1;
                     char *new_blob = malloc( new_blob_len );
+                    if( !new_blob ) return false;
+
                     sqrl_secure_strcpy( new_blob, blob, new_blob_len );
                     sqrl_secure_free_string( &l->blob, 0 );
                     l->blob = new_blob;
@@ -300,7 +317,14 @@ bool sqrl_scb_user_default(
                     size_t new_idk_len = strlen( idk ) + 1;
                     size_t new_blob_len = strlen( blob ) + 1;
                     char *new_idk = malloc( new_idk_len );
+                    if( !new_idk ) return false;
+
                     char *new_blob = malloc( new_blob_len );
+                    if( !new_blob ) {
+                        free( new_idk );
+                        return false;
+                    }
+
                     sqrl_secure_strcpy( new_idk, idk, new_idk_len );
                     sqrl_secure_strcpy( new_blob, blob, new_blob_len );
                     sqrl_secure_free_string( &l->idk, 0 );
